@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,12 +7,40 @@ import Icon from '@/components/ui/icon';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('home');
+  const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set());
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
     const element = document.getElementById(sectionId);
     element?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setVisibleSections((prev) => new Set([...prev, entry.target.id]));
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    const sections = document.querySelectorAll('[data-animate]');
+    sections.forEach((section) => {
+      if (observerRef.current) {
+        observerRef.current.observe(section);
+      }
+    });
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -41,7 +69,7 @@ const Index = () => {
       <section id="главная" className="pt-24 pb-16 bg-gradient-to-br from-primary via-primary to-secondary">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center min-h-[600px]">
-            <div className="text-primary-foreground animate-fade-in">
+            <div className="text-primary-foreground animate-fade-in-left">
               <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
                 Строительство дорог мирового класса
               </h1>
@@ -66,18 +94,18 @@ const Index = () => {
                 </Button>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative animate-fade-in-right">
               <img 
                 src="https://cdn.poehali.dev/projects/83866086-0abc-4d78-86cd-58fc47efd5d4/files/5d2359c5-c334-4b59-ad26-a86be485e25e.jpg" 
                 alt="Дорожная техника"
-                className="rounded-lg shadow-2xl"
+                className="rounded-lg shadow-2xl transition-transform duration-500 hover:scale-105"
               />
             </div>
           </div>
         </div>
       </section>
 
-      <section className="py-16 bg-muted/50">
+      <section className="py-16 bg-muted/50" id="stats" data-animate>
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             {[
@@ -85,8 +113,8 @@ const Index = () => {
               { icon: 'TrendingUp', value: '500+', label: 'Реализованных проектов' },
               { icon: 'Users', value: '200+', label: 'Специалистов' },
               { icon: 'CheckCircle', value: '100%', label: 'Качество работ' },
-            ].map((stat) => (
-              <Card key={stat.label} className="text-center hover-scale border-secondary/20">
+            ].map((stat, index) => (
+              <Card key={stat.label} className={`text-center hover-scale border-secondary/20 transition-all duration-500 ${visibleSections.has('stats') ? 'animate-slide-up' : 'opacity-0'}`} style={{ animationDelay: `${index * 100}ms` }}>
                 <CardContent className="pt-6">
                   <Icon name={stat.icon} size={48} className="mx-auto mb-4 text-accent" />
                   <div className="text-4xl font-bold text-primary mb-2">{stat.value}</div>
@@ -98,9 +126,9 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="о-компании" className="py-20 bg-background">
+      <section id="о-компании" className="py-20 bg-background" data-animate>
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center mb-12">
+          <div className={`max-w-4xl mx-auto text-center mb-12 transition-all duration-700 ${visibleSections.has('о-компании') ? 'animate-fade-in' : 'opacity-0'}`}>
             <h2 className="text-4xl font-bold text-primary mb-6">О компании</h2>
             <p className="text-lg text-muted-foreground leading-relaxed">
               ДорСтрой — ведущая компания в области дорожного строительства с 15-летним опытом работы. 
@@ -125,8 +153,8 @@ const Index = () => {
                 title: 'Наше видение', 
                 text: 'Стать эталоном качества в дорожном строительстве и лидером отрасли в регионе' 
               },
-            ].map((item) => (
-              <Card key={item.title} className="hover-scale border-secondary/20">
+            ].map((item, index) => (
+              <Card key={item.title} className={`hover-scale border-secondary/20 transition-all duration-700 ${visibleSections.has('о-компании') ? 'animate-scale-in' : 'opacity-0'}`} style={{ animationDelay: `${200 + index * 150}ms` }}>
                 <CardContent className="pt-6">
                   <Icon name={item.icon} size={40} className="mb-4 text-accent" />
                   <h3 className="text-xl font-bold text-primary mb-3">{item.title}</h3>
@@ -138,9 +166,9 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="услуги" className="py-20 bg-muted/30">
+      <section id="услуги" className="py-20 bg-muted/30" data-animate>
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
+          <div className={`text-center mb-12 transition-all duration-700 ${visibleSections.has('услуги') ? 'animate-fade-in' : 'opacity-0'}`}>
             <h2 className="text-4xl font-bold text-primary mb-4">Наши услуги</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Полный спектр услуг по строительству и эксплуатации дорожных объектов
@@ -166,8 +194,8 @@ const Index = () => {
                 description: 'Комплексное обслуживание и содержание дорожных объектов круглый год',
                 features: ['Зимнее содержание', 'Уборка территории', 'Мониторинг состояния', 'Профилактические работы']
               },
-            ].map((service) => (
-              <Card key={service.title} className="hover-scale border-secondary/20">
+            ].map((service, index) => (
+              <Card key={service.title} className={`hover-scale border-secondary/20 transition-all duration-700 ${visibleSections.has('услуги') ? 'animate-slide-up' : 'opacity-0'}`} style={{ animationDelay: `${index * 150}ms` }}>
                 <CardContent className="pt-6">
                   <Icon name={service.icon} size={48} className="mb-4 text-accent" />
                   <h3 className="text-2xl font-bold text-primary mb-3">{service.title}</h3>
@@ -187,9 +215,9 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="портфолио" className="py-20 bg-background">
+      <section id="портфолио" className="py-20 bg-background" data-animate>
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
+          <div className={`text-center mb-12 transition-all duration-700 ${visibleSections.has('портфолио') ? 'animate-fade-in' : 'opacity-0'}`}>
             <h2 className="text-4xl font-bold text-primary mb-4">Портфолио проектов</h2>
             <p className="text-lg text-muted-foreground">Примеры успешно реализованных объектов</p>
           </div>
@@ -216,13 +244,13 @@ const Index = () => {
                 description: 'Строительство региональной дороги с мостовыми переходами',
                 specs: ['Срок: 24 месяца', 'Протяженность: 67 км', 'Бюджет: 3.2 млрд руб']
               },
-            ].map((project) => (
-              <Card key={project.title} className="overflow-hidden hover-scale border-secondary/20">
+            ].map((project, index) => (
+              <Card key={project.title} className={`overflow-hidden hover-scale border-secondary/20 transition-all duration-700 ${visibleSections.has('портфолио') ? 'animate-scale-in' : 'opacity-0'}`} style={{ animationDelay: `${index * 150}ms` }}>
                 <div className="relative h-64 overflow-hidden">
                   <img 
                     src={project.image} 
                     alt={project.title}
-                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
                   />
                   <div className="absolute top-4 right-4">
                     <span className="bg-accent text-white px-3 py-1 rounded-full text-sm font-medium">
@@ -248,9 +276,9 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="отделы" className="py-20 bg-muted/30">
+      <section id="отделы" className="py-20 bg-muted/30" data-animate>
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
+          <div className={`text-center mb-12 transition-all duration-700 ${visibleSections.has('отделы') ? 'animate-fade-in' : 'opacity-0'}`}>
             <h2 className="text-4xl font-bold text-primary mb-4">Структура компании</h2>
             <p className="text-lg text-muted-foreground">Наши отделы и направления работы</p>
           </div>
@@ -264,8 +292,8 @@ const Index = () => {
               { icon: 'FileText', name: 'Юридический отдел', description: 'Правовое сопровождение' },
               { icon: 'Shield', name: 'Служба охраны труда', description: 'Обеспечение безопасности на объектах' },
               { icon: 'Headphones', name: 'Отдел по работе с клиентами', description: 'Клиентский сервис и поддержка' },
-            ].map((department) => (
-              <Card key={department.name} className="hover-scale border-secondary/20">
+            ].map((department, index) => (
+              <Card key={department.name} className={`hover-scale border-secondary/20 transition-all duration-700 ${visibleSections.has('отделы') ? 'animate-slide-up' : 'opacity-0'}`} style={{ animationDelay: `${index * 80}ms` }}>
                 <CardContent className="pt-6 text-center">
                   <Icon name={department.icon} size={40} className="mx-auto mb-3 text-accent" />
                   <h3 className="font-bold text-primary mb-2">{department.name}</h3>
@@ -277,14 +305,14 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="контакты" className="py-20 bg-background">
+      <section id="контакты" className="py-20 bg-background" data-animate>
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
+          <div className={`text-center mb-12 transition-all duration-700 ${visibleSections.has('контакты') ? 'animate-fade-in' : 'opacity-0'}`}>
             <h2 className="text-4xl font-bold text-primary mb-4">Свяжитесь с нами</h2>
             <p className="text-lg text-muted-foreground">Готовы обсудить ваш проект</p>
           </div>
           <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
-            <div>
+            <div className={`transition-all duration-700 ${visibleSections.has('контакты') ? 'animate-fade-in-left' : 'opacity-0'}`}>
               <Card className="border-secondary/20">
                 <CardContent className="pt-6">
                   <form className="space-y-4">
@@ -311,14 +339,14 @@ const Index = () => {
                 </CardContent>
               </Card>
             </div>
-            <div className="space-y-6">
+            <div className={`space-y-6 transition-all duration-700 ${visibleSections.has('контакты') ? 'animate-fade-in-right' : 'opacity-0'}`}>
               {[
                 { icon: 'MapPin', title: 'Адрес', text: 'г. Москва, ул. Дорожная, д. 15' },
                 { icon: 'Phone', title: 'Телефон', text: '+7 (495) 123-45-67' },
                 { icon: 'Mail', title: 'Email', text: 'info@dorstroy.ru' },
                 { icon: 'Clock', title: 'Режим работы', text: 'Пн-Пт: 9:00 - 18:00' },
-              ].map((contact) => (
-                <Card key={contact.title} className="hover-scale border-secondary/20">
+              ].map((contact, index) => (
+                <Card key={contact.title} className="hover-scale border-secondary/20 transition-all" style={{ animationDelay: `${300 + index * 100}ms` }}>
                   <CardContent className="pt-6 flex items-start space-x-4">
                     <div className="bg-accent/10 p-3 rounded-lg">
                       <Icon name={contact.icon} size={24} className="text-accent" />
